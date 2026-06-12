@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{fragments/head :: head(${video.title})}"></th:block>
+</head>
+<body class="min-h-screen bg-vdark text-vtext antialiased">
+    <nav th:replace="~{fragments/nav :: navbar(${user})}"></nav>
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <a th:href="@{/student}" class="text-vmuted hover:text-vtext text-sm mb-4 inline-block">← Back to videos</a>
+        <p th:if="${param.error}" class="text-amber-400 mb-4" th:text="${param.error[0]}"></p>
+
+        <div class="bg-vcard border border-slate-600/50 rounded-xl overflow-hidden mb-4">
+            <video id="videoPlayer" class="w-full" controls preload="auto"
+                   th:attr="data-video-id=${video.id}"
+                   th:src="@{'/videos/' + ${video.filePath}}">
+                Your browser does not support the video tag.
+            </video>
+            <div class="p-4 border-t border-slate-600/40">
+                <h1 class="text-xl font-bold text-vtext mb-1" th:text="${video.title}">Video Title</h1>
+                <p class="text-sm text-vmuted mb-2">
+                    <span class="text-vtext/80">Teacher:</span>
+                    <span th:text="${teacherDisplayName}">Teacher</span>
+                    <span class="mx-2">·</span>
+                    <span th:text="${video.subject}">Subject</span>
+                </p>
+                <p class="text-sm text-vtext leading-relaxed whitespace-pre-wrap"
+                   th:if="${video.description != null and !#strings.isEmpty(video.description)}"
+                   th:text="${video.description}">Description</p>
+                <p class="text-sm text-vmuted italic" th:if="${video.description == null or #strings.isEmpty(video.description)}">No description.</p>
+            </div>
+            <div class="p-4 border-t border-slate-600/40">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-vmuted text-sm">Watch at least 80% to unlock the test</span>
+                    <span id="progressLabel" class="text-vmuted text-sm">Progress: 0%</span>
+                </div>
+                <div class="w-full progress-track rounded-full h-2">
+                    <div id="progressBar" class="bg-vaccent h-2 rounded-full transition-all" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        <div id="takeTestSection" class="mt-4" th:classappend="${canTakeTest} ? '' : 'hidden'">
+            <a id="takeTestBtn" th:href="@{/test/{id}(id=${video.id})}"
+               class="inline-block bg-vaccent text-white px-6 py-3 rounded-lg font-medium hover:opacity-90">Take Test</a>
+        </div>
+        <div id="watchMoreSection" class="mt-4 text-vmuted text-sm" th:classappend="${canTakeTest} ? 'hidden' : ''">
+            <span id="watchMoreText">Watch 80% of the video to unlock the test.</span>
+        </div>
+    </main>
+    <script th:inline="javascript">
+        (function() {
+            const video = document.getElementById('videoPlayer');
+            const progressBar = document.getElementById('progressBar');
+            const progressLabel = document.getElementById('progressLabel');
+            const takeTestSection = document.getElementById('takeTestSection');
+            const watchMoreSection = document.getElementById('watchMoreSection');
+            const videoId = video.getAttribute('data-video-id');
+            const REQUIRED_PERCENT = 80;
+            const canTakeTestInitially = /*[[${canTakeTest}]]*/ false;
+            const resumePercent = /*[[${resumePercent}]]*/ 0;
+            let resumeApplied = false;
+            let lastThrottle = 0;
+
+            function currentPercent() {
+                if (!video.duration || !isFinite(video.duration) || video.duration <= 0) return 0;
+                return (video.currentTime / video.duration) * 100;
+            }
+
+            function sendProgress(percent) {
+                const p = Math.round(percent * 100) / 100;
+                if (p < 0 || !isFinite(p)) return;
+                const url = '/video/progress?videoId=' + encodeURIComponent(videoId) + '&progressPercent=' + encodeURIComponent(p);
+                fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } }).catch(function() {});
+            }
+
+            function sendProgressKeepalive(percent) {
+                const p = Math.round(percent * 100) / 100;
+                if (!isFinite(p)) return;
+                const url = '/video/progress?videoId=' + encodeURIComponent(videoId) + '&progressPercent=' + encodeURIComponent(p);
+                fetch(url, { method: 'POST', keepalive: true, headers: { 'X-Requested-With': 'XMLHttpRequest' } }).catch(function() {});
+            }
+
+            function updateUiAndMaybeUnlock() {
+                const percent = currentPercent();
+                progressBar.style.width = percent + '%';
+                progressLabel.textContent = 'Progress: ' + Math.round(percent) + '%';
+                if (percent >= REQUIRED_PERCENT) {
+                    takeTestSection.classList.remove('hidden');
+                    watchMoreSection.classList.add('hidden');
+                }
+                const now = Date.now();
+                if (now - lastThrottle > 4000) {
+                    lastThrottle = now;
+                    sendProgress(percent);
+                }
+            }
+
+            video.addEventListener('timeupdate', updateUiAndMaybeUnlock);
+            video.addEventListener('loadedmetadata', function() {
+                updateUiAndMaybeUnlock();
+                if (!resumeApplied && resumePercent > 0 && video.duration && isFinite(video.duration)) {
+                    resumeApplied = true;
+                    const t = (resumePercent / 100) * video.duration;
+                    if (isFinite(t) && t >= 0) {
+                        video.currentTime = Math.min(t, Math.max(0, video.duration - 0.5));
+                    }
+                }
+            });
+
+            video.addEventListener('pause', function() { sendProgress(currentPercent()); });
+            video.addEventListener('ended', function() { sendProgress(100); });
+
+            window.addEventListener('pagehide', function() {
+                sendProgressKeepalive(currentPercent());
+            });
+            window.addEventListener('beforeunload', function() {
+                sendProgressKeepalive(currentPercent());
+            });
+
+            if (canTakeTestInitially) {
+                takeTestSection.classList.remove('hidden');
+                watchMoreSection.classList.add('hidden');
+            }
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{fragments/head :: head('Student Results')}"></th:block>
+</head>
+<body class="min-h-screen bg-vdark text-vtext antialiased">
+<div class="layout-sidebar-main">
+    <div th:replace="~{fragments/sidebar :: sidebar('teacher-results', ${user})}"></div>
+    <main class="layout-sidebar-main__content flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 class="text-2xl font-bold mb-6">Student Results for My Videos</h1>
+        <div th:if="${#lists.isEmpty(results)}" class="text-vmuted">
+            No test results yet for your videos.
+        </div>
+        <div th:if="${!#lists.isEmpty(results)}" class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                <tr class="border-b border-slate-600">
+                    <th class="py-2 text-vmuted font-medium">Student</th>
+                    <th class="py-2 text-vmuted font-medium">Video</th>
+                    <th class="py-2 text-vmuted font-medium">Total</th>
+                    <th class="py-2 text-vmuted font-medium">Correct</th>
+                    <th class="py-2 text-vmuted font-medium">Score %</th>
+                    <th class="py-2 text-vmuted font-medium">Date</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${results}" class="border-b border-slate-700/50">
+                    <td class="py-3" th:text="${r.student.fullName}">Student</td>
+                    <td class="py-3" th:text="${r.video.title}">Video</td>
+                    <td class="py-3" th:text="${r.totalQuestions}">0</td>
+                    <td class="py-3 text-emerald-400" th:text="${r.correctAnswers}">0</td>
+                    <td class="py-3">
+                        <span th:text="${#numbers.formatDecimal(r.totalQuestions > 0 ? r.correctAnswers * 100.0 / r.totalQuestions : 0, 1, 1)}">0</span>%
+                    </td>
+                    <td class="py-3 text-vmuted" th:text="${#temporals.format(r.attemptedAt, 'MMM d, yyyy')}">Date</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+</body>
+</html>
+

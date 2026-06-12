@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{fragments/head :: head('Test')}"></th:block>
+</head>
+<body class="min-h-screen bg-vdark text-vtext antialiased">
+    <nav th:replace="~{fragments/nav :: navbar(${user})}"></nav>
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 class="text-2xl font-bold mb-2" th:text="${video.title}">Video Test</h1>
+        <p class="text-vmuted mb-4">Total time is 1 minute per question. You can move Next/Previous. Submit is available on the last question.</p>
+
+        <div class="mb-6 flex items-center gap-4">
+            <span id="timerDisplay" class="text-2xl font-mono font-bold text-vaccent">00:00</span>
+            <span class="text-vmuted">time remaining</span>
+        </div>
+
+        <form id="testForm" th:action="@{/test/submit/{id}(id=${video.id})}" method="post" class="space-y-8">
+            <div th:each="q, stat : ${questions}" class="question-block bg-vcard border border-slate-600/50 rounded-xl p-6" data-question-index th:attr="data-question-index=${stat.index}">
+                <p class="font-medium text-vmuted mb-2">Question <span th:text="${stat.count}">1</span> of <span th:text="${#lists.size(questions)}">0</span></p>
+                <p class="mb-4 font-medium" th:text="${q.questionText}">Question text</p>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-vdark/50">
+                        <input type="radio" th:name="'q_' + ${q.id}" value="1" class="rounded border-slate-600 text-vaccent focus:ring-vaccent"/>
+                        <span th:text="${q.option1}">A</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-vdark/50">
+                        <input type="radio" th:name="'q_' + ${q.id}" value="2" class="rounded border-slate-600 text-vaccent focus:ring-vaccent"/>
+                        <span th:text="${q.option2}">B</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-vdark/50">
+                        <input type="radio" th:name="'q_' + ${q.id}" value="3" class="rounded border-slate-600 text-vaccent focus:ring-vaccent"/>
+                        <span th:text="${q.option3}">C</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-vdark/50">
+                        <input type="radio" th:name="'q_' + ${q.id}" value="4" class="rounded border-slate-600 text-vaccent focus:ring-vaccent"/>
+                        <span th:text="${q.option4}">D</span>
+                    </label>
+                </div>
+                <div class="mt-6 flex justify-between items-center gap-3">
+                    <button type="button" class="btn-secondary" data-prev>Previous</button>
+                    <div class="flex gap-2">
+                        <button type="button" class="btn-secondary" data-next>Next</button>
+                        <button type="submit" class="btn-primary hidden" data-submit>Submit</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </main>
+    <script th:inline="javascript">
+        (function() {
+            const form = document.getElementById('testForm');
+            const timerDisplay = document.getElementById('timerDisplay');
+            const questionBlocks = document.querySelectorAll('.question-block');
+            const totalSeconds = questionBlocks.length * 60; // 1 minute per question
+            let currentIndex = 0;
+            let remaining = totalSeconds;
+            let timerId = null;
+
+            function fmt(sec) {
+                const m = Math.floor(sec / 60);
+                const s = sec % 60;
+                return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+            }
+
+            function setNavForBlock(block, index) {
+                const prevBtn = block.querySelector('[data-prev]');
+                const nextBtn = block.querySelector('[data-next]');
+                const submitBtn = block.querySelector('[data-submit]');
+                if (prevBtn) prevBtn.disabled = index === 0;
+                if (nextBtn) nextBtn.classList.toggle('hidden', index === questionBlocks.length - 1);
+                if (submitBtn) submitBtn.classList.toggle('hidden', index !== questionBlocks.length - 1);
+            }
+
+            function showQuestion(index) {
+                questionBlocks.forEach(function(el, i) {
+                    el.style.display = i === index ? 'block' : 'none';
+                    if (i === index) setNavForBlock(el, i);
+                });
+                currentIndex = index;
+            }
+
+            function tick() {
+                remaining--;
+                timerDisplay.textContent = fmt(Math.max(0, remaining));
+                if (remaining <= 0) {
+                    clearInterval(timerId);
+                    form.submit();
+                }
+            }
+
+            function bindNav() {
+                questionBlocks.forEach(function(block, idx) {
+                    const prevBtn = block.querySelector('[data-prev]');
+                    const nextBtn = block.querySelector('[data-next]');
+                    if (prevBtn) {
+                        prevBtn.addEventListener('click', function() {
+                            if (currentIndex > 0) showQuestion(currentIndex - 1);
+                        });
+                    }
+                    if (nextBtn) {
+                        nextBtn.addEventListener('click', function() {
+                            if (currentIndex < questionBlocks.length - 1) showQuestion(currentIndex + 1);
+                        });
+                    }
+                    // When user selects an option, keep nav visible; no auto-advance.
+                    const radios = block.querySelectorAll('input[type=\"radio\"]');
+                    radios.forEach(function(r) {
+                        r.addEventListener('change', function() {
+                            // no-op: UX requirement is satisfied by the Next/Previous buttons being present.
+                        });
+                    });
+                });
+            }
+
+            if (questionBlocks.length > 0) {
+                bindNav();
+                showQuestion(0);
+                timerDisplay.textContent = fmt(remaining);
+                timerId = setInterval(tick, 1000);
+            }
+        })();
+    </script>
+</body>
+</html>

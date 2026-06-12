@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{fragments/head :: head('Admin Dashboard')}"></th:block>
+</head>
+<body class="min-h-screen bg-vdark text-vtext antialiased">
+    <div class="layout-sidebar-main">
+        <div th:replace="~{fragments/sidebar :: sidebar('admin-dashboard', ${user})}"></div>
+        <main class="layout-sidebar-main__content flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+            <a th:href="@{/teacher}" class="btn-primary">Video Manager</a>
+        </div>
+        <p th:if="${message}" class="text-emerald-400 mb-4" th:text="${message}"></p>
+
+        <!-- Stats Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="stat-card stat-card--students cursor-pointer data-detail-trigger" data-type="Students">
+                <div class="stat-card__icon">🎓</div>
+                <div class="stat-card__info">
+                    <span class="stat-card__label">Total Students</span>
+                    <span class="stat-card__value" th:text="${stats.totalStudents}">0</span>
+                </div>
+                <div class="hidden detail-items">
+                    <div th:each="name : ${stats.studentNames}" th:text="${name}"></div>
+                </div>
+            </div>
+            <div class="stat-card stat-card--teachers cursor-pointer data-detail-trigger" data-type="Teachers">
+                <div class="stat-card__icon">👨‍🏫</div>
+                <div class="stat-card__info">
+                    <span class="stat-card__label">Total Teachers</span>
+                    <span class="stat-card__value" th:text="${stats.totalTeachers}">0</span>
+                </div>
+                <div class="hidden detail-items">
+                    <div th:each="name : ${stats.teacherNames}" th:text="${name}"></div>
+                </div>
+            </div>
+            <div class="stat-card stat-card--videos cursor-pointer data-detail-trigger" data-type="Videos">
+                <div class="stat-card__icon">🎬</div>
+                <div class="stat-card__info">
+                    <span class="stat-card__label">Total Videos</span>
+                    <span class="stat-card__value" th:text="${stats.totalVideos}">0</span>
+                </div>
+                <div class="hidden detail-items">
+                    <div th:each="title : ${stats.videoTitles}" th:text="${title}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-vcard border border-slate-600/50 rounded-xl p-6">
+            <h2 class="text-lg font-semibold mb-4">Teachers Pending Approval</h2>
+            <th:block th:if="${#lists.isEmpty(pendingTeachers)}">
+                <p class="text-vmuted">No pending approvals.</p>
+            </th:block>
+            <div th:if="${!#lists.isEmpty(pendingTeachers)}" class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-slate-600">
+                            <th class="py-2 text-vmuted font-medium">Username</th>
+                            <th class="py-2 text-vmuted font-medium">Full Name</th>
+                            <th class="py-2 text-vmuted font-medium">Email</th>
+                            <th class="py-2 text-vmuted font-medium">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="t : ${pendingTeachers}" class="border-b border-slate-700/50">
+                            <td th:text="${t.username}" class="py-3"></td>
+                            <td th:text="${t.fullName}" class="py-3"></td>
+                            <td th:text="${t.email}" class="py-3 text-vmuted"></td>
+                            <td class="py-3">
+                                <button type="button"
+                                        th:attr="data-teacher-id=${t.id}"
+                                        class="teacher-review-open px-4 py-2 rounded-full text-sm font-semibold text-white shadow-md transition hover:opacity-95"
+                                        style="background: linear-gradient(135deg, #5B9BD5, #4A8BC4); box-shadow: 0 8px 22px rgba(91, 155, 213, 0.35);">
+                                    Review application
+                                </button>
+                                <div th:id="|teacher-stash-${t.id}|" class="hidden" aria-hidden="true">
+                                    <span class="ts-user" th:text="${t.username}"></span>
+                                    <span class="ts-name" th:text="${t.fullName}"></span>
+                                    <span class="ts-email" th:text="${t.email != null ? t.email : ''}"></span>
+                                    <span class="ts-qual" th:text="${t.qualification != null ? t.qualification : ''}"></span>
+                                    <span class="ts-exp" th:text="${t.experienceYears != null ? t.experienceYears : ''}"></span>
+                                    <span class="ts-core" th:text="${t.coreConcepts != null ? t.coreConcepts : ''}"></span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Teacher review modal (matches site cards: bg-vcard, soft border, accent) -->
+        <div id="teacher-review-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="teacher-review-title">
+            <div class="absolute inset-0 bg-[#4A4E69]/45 backdrop-blur-[2px]" data-close-teacher-modal="1"></div>
+            <div class="relative w-full max-w-lg max-h-[min(90vh,720px)] overflow-y-auto rounded-xl border border-[rgba(125,137,168,0.35)] bg-vcard shadow-xl">
+                <div class="sticky top-0 z-[1] flex items-start justify-between gap-3 border-b border-[rgba(125,137,168,0.22)] bg-vcard px-6 py-4">
+                    <h2 id="teacher-review-title" class="text-lg font-semibold text-vtext">Review teacher registration</h2>
+                    <button type="button" class="btn-secondary shrink-0 text-sm" data-close-teacher-modal="1" aria-label="Close">Close</button>
+                </div>
+                <div class="px-6 py-5 space-y-4 text-vtext">
+                    <dl class="space-y-3 text-sm">
+                        <div>
+                            <dt class="text-vmuted font-medium">Username</dt>
+                            <dd id="trv-username" class="mt-0.5 font-medium"></dd>
+                        </div>
+                        <div>
+                            <dt class="text-vmuted font-medium">Full name</dt>
+                            <dd id="trv-name" class="mt-0.5"></dd>
+                        </div>
+                        <div>
+                            <dt class="text-vmuted font-medium">Email</dt>
+                            <dd id="trv-email" class="mt-0.5 text-vmuted"></dd>
+                        </div>
+                        <div>
+                            <dt class="text-vmuted font-medium">Qualification</dt>
+                            <dd id="trv-qual" class="mt-0.5 whitespace-pre-wrap"></dd>
+                        </div>
+                        <div>
+                            <dt class="text-vmuted font-medium">Experience</dt>
+                            <dd id="trv-exp" class="mt-0.5"></dd>
+                        </div>
+                        <div>
+                            <dt class="text-vmuted font-medium">Core concepts (subjects)</dt>
+                            <dd id="trv-core" class="mt-0.5 whitespace-pre-wrap"></dd>
+                        </div>
+                    </dl>
+                    <p class="text-xs text-vmuted border-t border-[rgba(125,137,168,0.18)] pt-4">Approve only after you have verified this information meets your institution’s requirements.</p>
+                    <div class="flex flex-wrap gap-3 pt-1">
+                        <form th:action="@{/admin/approve-teacher}" method="post" class="inline">
+                            <input type="hidden" name="teacherId" id="trv-form-approve-id" value=""/>
+                            <button type="submit" class="btn-primary text-sm px-5 py-2.5">Approve as teacher</button>
+                        </form>
+                        <form th:action="@{/admin/reject-teacher}" method="post" class="inline"
+                              id="trv-form-reject"
+                              onsubmit="return confirm('Reject this teacher registration? This will remove the account.');">
+                            <input type="hidden" name="teacherId" id="trv-form-reject-id" value=""/>
+                            <button type="submit" class="btn-secondary text-sm px-5 py-2.5 border-[rgba(232,93,117,0.45)] text-[#c44] hover:bg-[rgba(232,93,117,0.08)]">Reject</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail items modal -->
+        <div id="details-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="details-modal-title">
+            <div class="absolute inset-0 bg-[#4A4E69]/45 backdrop-blur-[2px]" data-close-details-modal="1"></div>
+            <div class="relative w-full max-w-md max-h-[min(90vh,600px)] overflow-y-auto rounded-xl border border-[rgba(125,137,168,0.35)] bg-vcard shadow-xl flex flex-col">
+                <div class="sticky top-0 z-[1] flex items-start justify-between gap-3 border-b border-[rgba(125,137,168,0.22)] bg-vcard px-6 py-4">
+                    <h2 id="details-modal-title" class="text-lg font-semibold text-vtext">Details</h2>
+                    <button type="button" class="btn-secondary shrink-0 text-sm" data-close-details-modal="1" aria-label="Close">Close</button>
+                </div>
+                <div class="px-6 py-5 text-vtext">
+                    <ul id="details-modal-list" class="space-y-2.5 text-sm max-h-[350px] overflow-y-auto pr-2">
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-vcard border border-slate-600/50 rounded-xl p-6 mt-6">
+            <h2 class="text-lg font-semibold mb-4">All Uploaded Videos</h2>
+            <th:block th:if="${#lists.isEmpty(videos)}">
+                <p class="text-vmuted">No videos uploaded yet.</p>
+            </th:block>
+            <div th:if="${!#lists.isEmpty(videos)}" class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-slate-600">
+                            <th class="py-2 text-vmuted font-medium">Title</th>
+                            <th class="py-2 text-vmuted font-medium">Subject</th>
+                            <th class="py-2 text-vmuted font-medium">Teacher</th>
+                            <th class="py-2 text-vmuted font-medium">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="v : ${videos}" class="border-b border-slate-700/50">
+                            <td th:text="${v.title}" class="py-3"></td>
+                            <td th:text="${v.subject}" class="py-3 text-vmuted"></td>
+                            <td class="py-3 text-vmuted">
+                                <span th:text="${v.uploadedBy != null ? v.uploadedBy.username : '-'}">teacher</span>
+                            </td>
+                            <td class="py-3">
+                                <form th:action="@{/admin/video/delete}" method="post"
+                                      onsubmit="return confirm('Delete this video? This will also remove its questions and related student progress/results.');">
+                                    <input type="hidden" name="videoId" th:value="${v.id}"/>
+                                    <button type="submit" class="px-3 py-1 rounded-lg text-sm font-medium text-white"
+                                            style="background: linear-gradient(135deg, #e11d48, #fb7185);">
+                                        Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    </div>
+    <script>
+        (function () {
+            function dash(s) {
+                if (s === null || s === undefined) return '—';
+                var t = String(s).trim();
+                return t.length ? t : '—';
+            }
+            function openTeacherModal(teacherId) {
+                var stash = document.getElementById('teacher-stash-' + teacherId);
+                var modal = document.getElementById('teacher-review-modal');
+                if (!stash || !modal) return;
+                var user = stash.querySelector('.ts-user');
+                var name = stash.querySelector('.ts-name');
+                var email = stash.querySelector('.ts-email');
+                var qual = stash.querySelector('.ts-qual');
+                var exp = stash.querySelector('.ts-exp');
+                var core = stash.querySelector('.ts-core');
+                document.getElementById('trv-username').textContent = dash(user && user.textContent);
+                document.getElementById('trv-name').textContent = dash(name && name.textContent);
+                document.getElementById('trv-email').textContent = dash(email && email.textContent);
+                document.getElementById('trv-qual').textContent = dash(qual && qual.textContent);
+                var expRaw = exp && exp.textContent != null ? String(exp.textContent).trim() : '';
+                document.getElementById('trv-exp').textContent = expRaw !== '' ? expRaw + ' years' : '—';
+                document.getElementById('trv-core').textContent = dash(core && core.textContent);
+                document.getElementById('trv-form-approve-id').value = teacherId;
+                document.getElementById('trv-form-reject-id').value = teacherId;
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+            function closeTeacherModal() {
+                var modal = document.getElementById('teacher-review-modal');
+                if (modal) modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+            function openDetailsModal(title, items) {
+                var modal = document.getElementById('details-modal');
+                var titleEl = document.getElementById('details-modal-title');
+                var listEl = document.getElementById('details-modal-list');
+                if (!modal || !titleEl || !listEl) return;
+
+                titleEl.textContent = title;
+                listEl.innerHTML = '';
+
+                if (items.length === 0) {
+                    var li = document.createElement('li');
+                    li.className = 'text-vmuted italic py-2 px-3';
+                    li.textContent = 'No items found.';
+                    listEl.appendChild(li);
+                } else {
+                    items.forEach(function (item) {
+                        var li = document.createElement('li');
+                        li.className = 'py-2 px-3 bg-vdark/60 rounded-lg border border-slate-200/50 text-vtext font-medium flex items-center gap-2';
+                        var emoji = '•';
+                        if (title.indexOf('Students') !== -1) emoji = '🎓';
+                        else if (title.indexOf('Teachers') !== -1) emoji = '👨‍🏫';
+                        else if (title.indexOf('Videos') !== -1) emoji = '🎬';
+                        li.textContent = emoji + ' ' + item;
+                        listEl.appendChild(li);
+                    });
+                }
+
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+            function closeDetailsModal() {
+                var modal = document.getElementById('details-modal');
+                if (modal) modal.classList.add('hidden');
+                
+                var teacherModal = document.getElementById('teacher-review-modal');
+                if (teacherModal && !teacherModal.classList.contains('hidden')) {
+                    // keep body overflow hidden
+                } else {
+                    document.body.style.overflow = '';
+                }
+            }
+            document.querySelectorAll('.teacher-review-open').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var id = btn.getAttribute('data-teacher-id');
+                    if (id) openTeacherModal(id);
+                });
+            });
+            document.querySelectorAll('[data-close-teacher-modal]').forEach(function (el) {
+                el.addEventListener('click', function (e) {
+                    if (e.target === el) closeTeacherModal();
+                });
+            });
+            document.querySelectorAll('.data-detail-trigger').forEach(function (card) {
+                card.addEventListener('click', function () {
+                    var type = card.getAttribute('data-type');
+                    var items = [];
+                    card.querySelectorAll('.detail-items > div').forEach(function (itemEl) {
+                        items.push(itemEl.textContent);
+                    });
+                    openDetailsModal('All ' + type, items);
+                });
+            });
+            document.querySelectorAll('[data-close-details-modal]').forEach(function (el) {
+                el.addEventListener('click', function (e) {
+                    if (e.target === el) closeDetailsModal();
+                });
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    closeTeacherModal();
+                    closeDetailsModal();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

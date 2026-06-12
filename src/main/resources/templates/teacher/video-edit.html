@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{fragments/head :: head('Edit Video')}"></th:block>
+</head>
+<body class="min-h-screen bg-vdark text-vtext antialiased">
+    <div class="layout-sidebar-main">
+        <div th:replace="~{fragments/sidebar :: sidebar('teacher-videos', ${user})}"></div>
+        <main class="layout-sidebar-main__content flex-1 max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 class="text-2xl font-bold mb-6">Edit Video</h1>
+        <p th:if="${error}" class="text-red-400 mb-4" th:text="${error}"></p>
+        <form th:action="@{/teacher/video/{id}/edit(id=${video.id})}" th:object="${video}" method="post" enctype="multipart/form-data" class="space-y-4 bg-vcard border border-slate-600/50 rounded-xl p-6">
+            <div>
+                <label for="subject" class="block text-sm font-medium text-vmuted mb-1">Subject / Category *</label>
+                <input type="text" id="subject" th:field="*{subject}" required
+                       class="form-input-light focus:ring-2 focus:ring-vaccent"/>
+            </div>
+            <div>
+                <label for="title" class="block text-sm font-medium text-vmuted mb-1">Video Title *</label>
+                <input type="text" id="title" th:field="*{title}" required
+                       class="form-input-light focus:ring-2 focus:ring-vaccent"/>
+            </div>
+            <div>
+                <label for="description" class="block text-sm font-medium text-vmuted mb-1">Description</label>
+                <textarea id="description" th:field="*{description}" rows="3"
+                          class="form-input-light focus:ring-2 focus:ring-vaccent"></textarea>
+            </div>
+            <div>
+                <label for="file" class="block text-sm font-medium text-vmuted mb-1">Replace video file (optional, .mp4)</label>
+                <input type="file" id="file" name="file" accept="video/mp4,.mp4"
+                       class="w-full text-vmuted file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-vaccent file:text-white"/>
+                <p class="text-vmuted text-xs mt-1">Leave empty to keep the current file.</p>
+            </div>
+            <button type="submit" class="w-full bg-vaccent text-white py-2.5 rounded-lg font-medium hover:opacity-90">Save changes</button>
+        </form>
+        <a th:href="@{/teacher}" class="inline-block mt-4 text-vmuted hover:text-vtext">← Back to dashboard</a>
+    </main>
+    </div>
+</body>
+</html>

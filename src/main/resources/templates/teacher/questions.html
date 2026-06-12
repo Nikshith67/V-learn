@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{fragments/head :: head('MCQ Questions')}"></th:block>
+</head>
+<body class="min-h-screen bg-vdark text-vtext antialiased">
+    <div class="layout-sidebar-main">
+        <div th:replace="~{fragments/sidebar :: sidebar('teacher-videos', ${user})}"></div>
+        <main class="layout-sidebar-main__content flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 class="text-2xl font-bold mb-2" th:text="${video.title}">Video Title</h1>
+        <p class="text-vmuted mb-6" th:text="${video.subject}">Subject</p>
+        <p th:if="${message}" class="text-emerald-400 mb-4" th:text="${message}"></p>
+        <div class="flex justify-between items-center mb-4">
+            <span class="text-vmuted">Questions: <span th:text="${#lists.size(questions)}">0</span></span>
+            <a th:href="@{/teacher/video/{id}/questions/add(id=${video.id})}" class="bg-vaccent text-white px-4 py-2 rounded-lg font-medium hover:opacity-90">Add Question</a>
+        </div>
+        <th:block th:if="${#lists.isEmpty(questions)}">
+            <div class="bg-vcard border border-slate-600/50 rounded-xl p-8 text-center text-vmuted">
+                <p>No MCQ questions yet. Add questions linked to this video.</p>
+                <a th:href="@{/teacher/video/{id}/questions/add(id=${video.id})}" class="text-vaccent hover:underline mt-2 inline-block">Add first question</a>
+            </div>
+        </th:block>
+        <div th:if="${!#lists.isEmpty(questions)}" class="space-y-4">
+            <div th:each="q, stat : ${questions}" class="bg-vcard border border-slate-600/50 rounded-xl p-4">
+                <div class="flex flex-wrap justify-between gap-2 items-start mb-2">
+                    <p class="font-medium text-vmuted">Q<span th:text="${stat.count}">1</span></p>
+                    <div class="flex gap-2">
+                        <a th:href="@{/teacher/video/{vid}/questions/{qid}/edit(vid=${video.id},qid=${q.id})}"
+                           class="px-3 py-1 rounded text-sm font-medium text-white"
+                           style="background: linear-gradient(135deg, #5B9BD5, #4A8BC4);">Edit</a>
+                        <form th:action="@{/teacher/video/{vid}/questions/{qid}/delete(vid=${video.id},qid=${q.id})}" method="post"
+                              onsubmit="return confirm('Delete this question?');" class="inline">
+                            <button type="submit" class="px-3 py-1 rounded text-sm font-medium text-white"
+                                    style="background: linear-gradient(135deg, #e11d48, #fb7185);">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                <p class="mb-2" th:text="${q.questionText}">Question text</p>
+                <ul class="text-sm text-vmuted space-y-1">
+                    <li>1. <span th:text="${q.option1}"></span><span th:if="${q.correctOption == 1}" class="text-emerald-400 ml-1">✓</span></li>
+                    <li>2. <span th:text="${q.option2}"></span><span th:if="${q.correctOption == 2}" class="text-emerald-400 ml-1">✓</span></li>
+                    <li>3. <span th:text="${q.option3}"></span><span th:if="${q.correctOption == 3}" class="text-emerald-400 ml-1">✓</span></li>
+                    <li>4. <span th:text="${q.option4}"></span><span th:if="${q.correctOption == 4}" class="text-emerald-400 ml-1">✓</span></li>
+                </ul>
+            </div>
+        </div>
+        <a th:href="@{/teacher}" class="inline-block mt-6 text-vmuted hover:text-vtext">← Back to dashboard</a>
+    </main>
+    </div>
+</body>
+</html>

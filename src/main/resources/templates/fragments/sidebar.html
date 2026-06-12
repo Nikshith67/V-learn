@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside th:fragment="sidebar(active, user)"
+       class="sidebar-shell">
+    <a th:href="@{/}" class="sidebar-brand">
+        <img id="app-logo" src="/images/Vlearn.png" alt="V-Learn" class="app-logo-sidebar"/>
+        <span class="font-semibold text-vtext text-base tracking-wide">V-Learn</span>
+    </a>
+
+    <nav class="sidebar-nav flex-1 text-sm">
+        <!-- Student menu -->
+        <th:block th:if="${user != null and user.role.name() == 'STUDENT'}">
+            <a th:href="@{/student}"
+               class="sidebar-link"
+               th:classappend="${active} == 'student-videos' ? ' sidebar-link--active' : ''">
+                Videos
+            </a>
+            <a th:href="@{/student/profile}"
+               class="sidebar-link"
+               th:classappend="${active} == 'student-profile' ? ' sidebar-link--active' : ''">
+                Profile & Results
+            </a>
+        </th:block>
+
+        <!-- Teacher menu -->
+        <th:block th:if="${user != null and user.role.name() == 'TEACHER'}">
+            <a th:href="@{/teacher}"
+               class="sidebar-link"
+               th:classappend="${active} == 'teacher-videos' ? ' sidebar-link--active' : ''">
+                Manage Videos
+            </a>
+            <a th:href="@{/teacher/video/upload}"
+               class="sidebar-link"
+               th:classappend="${active} == 'teacher-upload' ? ' sidebar-link--active' : ''">
+                Upload Video
+            </a>
+            <a th:href="@{/teacher/results}"
+               class="sidebar-link"
+               th:classappend="${active} == 'teacher-results' ? ' sidebar-link--active' : ''">
+                Student Results
+            </a>
+        </th:block>
+
+        <!-- Admin menu -->
+        <th:block th:if="${user != null and user.role.name() == 'ADMIN'}">
+            <a th:href="@{/admin}"
+               class="sidebar-link"
+               th:classappend="${active} == 'admin-dashboard' ? ' sidebar-link--active' : ''">
+                Main Dashboard
+            </a>
+            <a th:href="@{/teacher}"
+               class="sidebar-link"
+               th:classappend="${active} == 'admin-videos' ? ' sidebar-link--active' : ''">
+                Video Manager
+            </a>
+            <a th:href="@{/admin/results}"
+               class="sidebar-link"
+               th:classappend="${active} == 'admin-results' ? ' sidebar-link--active' : ''">
+                Student Results
+            </a>
+        </th:block>
+    </nav>
+
+    <a th:href="@{/logout}" class="sidebar-logout text-sm">
+        Logout
+    </a>
+</aside>
+</body>
+</html>
+

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{fragments/head :: head('Home')}"></th:block>
+</head>
+<body class="min-h-screen bg-vdark text-vtext antialiased">
+    <div class="layout-sidebar-main">
+        <div th:replace="~{fragments/sidebar :: sidebar('student-videos', ${user})}"></div>
+        <main class="layout-sidebar-main__content flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">Available Videos</h1>
+            <a th:href="@{/student/profile}" class="text-vmuted hover:text-vtext">My Profile</a>
+        </div>
+        <th:block th:if="${subjects != null && !#lists.isEmpty(subjects)}">
+            <div class="mb-6 flex flex-wrap gap-2">
+                <a th:href="@{/student}" class="px-3 py-1 rounded-full bg-vcard border border-slate-600 text-vtext text-sm hover:bg-vaccent">All</a>
+                <a th:each="sub : ${subjects}" th:href="@{/student(subject=${sub})}" th:text="${sub}"
+                   class="px-3 py-1 rounded-full bg-vcard border border-slate-600 text-vmuted text-sm hover:bg-vaccent hover:text-vtext"/>
+            </div>
+        </th:block>
+        <th:block th:if="${#lists.isEmpty(videos)}">
+            <div class="bg-vcard border border-slate-600/50 rounded-xl p-12 text-center text-vmuted">
+                <p>No videos available yet.</p>
+            </div>
+        </th:block>
+        <div th:if="${!#lists.isEmpty(videos)}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div th:each="v : ${videos}" class="video-card">
+                <div class="video-card__thumb">
+                    <video class="js-video-thumb" muted playsinline preload="metadata" disablepictureinpicture
+                           loading="lazy" aria-hidden="true"
+                           th:src="@{'/videos/' + ${v.filePath}}">
+                    </video>
+                </div>
+                <div class="video-card__meta">
+                    <h3 class="font-semibold mb-1 leading-snug" th:text="${v.title}">Title</h3>
+                    <p class="text-vmuted text-sm" th:text="${v.subject}">Subject</p>
+                    <p class="text-vmuted text-sm mt-2 line-clamp-2" th:if="${v.description != null and !#strings.isEmpty(v.description)}"
+                       th:text="${v.description}">Description</p>
+                </div>
+                <a th:href="@{/video/watch/{id}(id=${v.id})}" class="video-card__link"
+                   th:attr="aria-label=${'Watch ' + v.title}"></a>
+            </div>
+        </div>
+    </main>
+    </div>
+    <script>
+        (function () {
+            function primeFrame(vid) {
+                function seekPreview() {
+                    try {
+                        var d = vid.duration;
+                        if (d && isFinite(d) && d > 0) {
+                            var t = Math.min(Math.max(0.08, d * 0.02), d - 0.05);
+                            vid.currentTime = t;
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+                vid.addEventListener('loadedmetadata', seekPreview, { once: true });
+            }
+            document.querySelectorAll('video.js-video-thumb').forEach(primeFrame);
+        })();
+    </script>
+</body>
+</html>

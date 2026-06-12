@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{fragments/head :: head('Login')}"></th:block>
+</head>
+<body class="login-theme-bg antialiased">
+    <main class="h-full w-full flex items-center justify-center px-4 py-4">
+        <section class="login-shell">
+            <div class="login-visual">
+                <div class="login-visual-shape"></div>
+                <div class="login-visual-content">
+                    <img id="app-logo" src="/images/Vlearn.png" alt="V-Learn" class="login-logo"
+                         onerror="this.style.display='none'"/>
+                    <div class="login-badge">V-Learn Platform</div>
+                    <div class="login-illustration">
+                        <div>
+                            <h2>Learn to grow</h2>
+                            <p>Video learning and assessment in one place.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="login-form-side">
+                <h1>Login</h1>
+                <p th:if="${error}" class="text-red-200 text-sm mb-4" th:text="${error}"></p>
+                <p th:if="${message}" class="text-sky-100 text-sm mb-4" th:text="${message}"></p>
+
+                <form th:action="@{/login}" method="post" class="space-y-3">
+                    <div>
+                        <label for="username" class="block text-sm mb-1 text-white/90">Username</label>
+                        <input type="text" id="username" name="username" required class="login-input" placeholder="Enter your username"/>
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm mb-1 text-white/90">Password</label>
+                        <input type="password" id="password" name="password" required class="login-input" placeholder="Enter your password"/>
+                    </div>
+                    <button type="submit" class="login-btn">Login to V-Learn</button>
+                </form>
+
+                <p class="mt-4 text-sm text-white/85">
+                    Don't have an account?
+                    <a th:href="@{/register}" class="login-link underline">Register now</a>
+                </p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

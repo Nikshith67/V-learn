@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{fragments/head :: head('My Profile')}"></th:block>
+</head>
+<body class="min-h-screen bg-vdark text-vtext antialiased">
+    <div class="layout-sidebar-main">
+        <div th:replace="~{fragments/sidebar :: sidebar('student-profile', ${user})}"></div>
+        <main class="layout-sidebar-main__content flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 class="text-2xl font-bold mb-6">My Profile</h1>
+        <p class="text-vmuted mb-6" th:text="${user.fullName}">Name</p>
+
+        <div class="mb-8">
+            <h2 class="text-lg font-semibold mb-2">Completed videos</h2>
+            <p class="text-vmuted text-sm mb-4">You reached at least 80% watch time on these videos (test unlocked).</p>
+            <th:block th:if="${#lists.isEmpty(completedVideos)}">
+                <p class="text-vmuted">No completed videos yet.</p>
+            </th:block>
+            <ul th:if="${!#lists.isEmpty(completedVideos)}" class="space-y-2">
+                <li th:each="vp : ${completedVideos}" class="flex flex-wrap items-baseline justify-between gap-2">
+                    <a th:href="@{/video/watch/{id}(id=${vp.video.id})}" th:text="${vp.video.title}" class="text-vaccent hover:underline"></a>
+                    <span class="text-vmuted text-sm"
+                          th:text="${'Max ' + #numbers.formatDecimal(vp.progressPercent, 0, 0) + '%'}">80%</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mb-8">
+            <h2 class="text-lg font-semibold mb-2">Continue learning</h2>
+            <p class="text-vmuted text-sm mb-4">Videos you started but have not yet finished to 80%—pick up where you left off.</p>
+            <th:block th:if="${#lists.isEmpty(continueLearning)}">
+                <p class="text-vmuted">No videos in progress.</p>
+            </th:block>
+            <ul th:if="${!#lists.isEmpty(continueLearning)}" class="space-y-3">
+                <li th:each="vp : ${continueLearning}" class="bg-vcard border border-slate-600/50 rounded-lg px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                    <a th:href="@{/video/watch/{id}(id=${vp.video.id})}" th:text="${vp.video.title}" class="text-vaccent hover:underline font-medium"></a>
+                    <span class="text-vmuted text-sm">
+                        <span th:text="${#numbers.formatDecimal(vp.lastWatchedPercent > 0 ? vp.lastWatchedPercent : vp.progressPercent, 0, 0) + '%'}">0%</span>
+                        <span class="text-vmuted/80"> last position</span>
+                        <span th:if="${vp.progressPercent > vp.lastWatchedPercent}" class="text-vmuted/80">
+                            · max <span th:text="${#numbers.formatDecimal(vp.progressPercent, 0, 0) + '%'}">0%</span>
+                        </span>
+                    </span>
+                </li>
+            </ul>
+        </div>
+
+        <div>
+            <h2 class="text-lg font-semibold mb-4">Test results</h2>
+            <th:block th:if="${#lists.isEmpty(results)}">
+                <p class="text-vmuted">No test results yet.</p>
+            </th:block>
+            <div th:if="${!#lists.isEmpty(results)}" class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-slate-600">
+                            <th class="py-2 text-vmuted font-medium">Video</th>
+                            <th class="py-2 text-vmuted font-medium">Total</th>
+                            <th class="py-2 text-vmuted font-medium">Correct</th>
+                            <th class="py-2 text-vmuted font-medium">Wrong</th>
+                            <th class="py-2 text-vmuted font-medium">Score %</th>
+                            <th class="py-2 text-vmuted font-medium">Date</th>
+                            <th class="py-2 text-vmuted font-medium">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="r : ${results}" class="border-b border-slate-700/50">
+                            <td th:text="${r.video.title}" class="py-3"></td>
+                            <td th:text="${r.totalQuestions}" class="py-3"></td>
+                            <td th:text="${r.correctAnswers}" class="py-3 text-emerald-400"></td>
+                            <td th:text="${r.wrongAnswers}" class="py-3 text-red-400"></td>
+                            <td class="py-3"><span th:text="${#numbers.formatDecimal(r.totalQuestions > 0 ? r.correctAnswers * 100.0 / r.totalQuestions : 0, 1, 1)}">0</span>%</td>
+                            <td th:text="${#temporals.format(r.attemptedAt, 'MMM d, yyyy')}" class="py-3 text-vmuted"></td>
+                            <td class="py-3">
+                                <a th:href="@{/result/{id}(id=${r.id})}" class="text-vaccent hover:underline text-sm">View result</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <a th:href="@{/student}" class="inline-block mt-6 text-vmuted hover:text-vtext">← Back to videos</a>
+    </main>
+    </div>
+</body>
+</html>

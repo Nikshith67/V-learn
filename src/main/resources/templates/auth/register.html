@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{fragments/head :: head('Register')}"></th:block>
+</head>
+<body class="min-h-screen bg-vdark text-vtext antialiased">
+    <nav th:replace="~{fragments/nav :: navbar(null)}"></nav>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center">
+        <div class="w-full max-w-md">
+            <div class="bg-vcard border border-slate-600/50 rounded-xl p-8 shadow-xl">
+                <h1 class="text-2xl font-bold text-vtext mb-6">Create your account</h1>
+                <p th:if="${error}" class="text-red-400 text-sm mb-4" th:text="${error}"></p>
+                <form th:action="@{/register}" th:object="${user}" method="post" class="space-y-4">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-vmuted mb-1">Username *</label>
+                        <input type="text" id="username" th:field="*{username}" required
+                               class="w-full px-4 py-2 rounded-lg bg-vdark border border-slate-600 text-vtext focus:ring-2 focus:ring-vaccent"/>
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-vmuted mb-1">Password *</label>
+                        <input type="password" id="password" name="password" required
+                               class="w-full px-4 py-2 rounded-lg bg-vdark border border-slate-600 text-vtext focus:ring-2 focus:ring-vaccent"/>
+                    </div>
+                    <div>
+                        <label for="fullName" class="block text-sm font-medium text-vmuted mb-1">Full name</label>
+                        <input type="text" id="fullName" th:field="*{fullName}"
+                               class="w-full px-4 py-2 rounded-lg bg-vdark border border-slate-600 text-vtext focus:ring-2 focus:ring-vaccent"/>
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-vmuted mb-1">Email</label>
+                        <input type="email" id="email" th:field="*{email}"
+                               class="w-full px-4 py-2 rounded-lg bg-vdark border border-slate-600 text-vtext focus:ring-2 focus:ring-vaccent"/>
+                    </div>
+                    <div>
+                        <label for="role" class="block text-sm font-medium text-vmuted mb-1">I am a</label>
+                        <select id="role" name="roleStr" required class="w-full px-4 py-2 rounded-lg bg-vdark border border-slate-600 text-vtext focus:ring-2 focus:ring-vaccent">
+                            <option value="STUDENT">Student</option>
+                            <option value="TEACHER">Teacher</option>
+                        </select>
+                    </div>
+                    <div id="teacher-fields" class="space-y-4 hidden border-t border-slate-600/40 pt-4 mt-1">
+                        <p class="text-sm text-vmuted">Teacher registration requires the following. They will be reviewed by an admin before you can sign in.</p>
+                        <div>
+                            <label for="qualification" class="block text-sm font-medium text-vmuted mb-1">Qualification *</label>
+                            <input type="text" id="qualification" th:field="*{qualification}" maxlength="500"
+                                   placeholder="e.g. M.Sc. Physics, B.Ed."
+                                   class="w-full px-4 py-2 rounded-lg bg-vdark border border-slate-600 text-vtext focus:ring-2 focus:ring-vaccent"/>
+                        </div>
+                        <div>
+                            <label for="experienceYears" class="block text-sm font-medium text-vmuted mb-1">Experience (years) *</label>
+                            <input type="number" id="experienceYears" th:field="*{experienceYears}" min="0" max="80" step="1"
+                                   placeholder="0"
+                                   class="w-full px-4 py-2 rounded-lg bg-vdark border border-slate-600 text-vtext focus:ring-2 focus:ring-vaccent"/>
+                        </div>
+                        <div>
+                            <label for="coreConcepts" class="block text-sm font-medium text-vmuted mb-1">Core concepts (subjects you cover) *</label>
+                            <textarea id="coreConcepts" th:field="*{coreConcepts}" rows="3" maxlength="2000"
+                                      placeholder="List subjects or topics you can teach..."
+                                      class="w-full px-4 py-2 rounded-lg bg-vdark border border-slate-600 text-vtext focus:ring-2 focus:ring-vaccent resize-y min-h-[5rem]"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-vaccent text-white py-2.5 rounded-lg font-medium hover:opacity-90 transition">Register</button>
+                </form>
+                <p class="mt-4 text-vmuted text-sm">
+                    Already have an account? <a th:href="@{/login}" class="text-vaccent hover:underline">Sign in</a>
+                </p>
+            </div>
+        </div>
+    </main>
+    <script>
+        (function () {
+            var roleSelect = document.getElementById('role');
+            var teacherFields = document.getElementById('teacher-fields');
+            var q = document.getElementById('qualification');
+            var e = document.getElementById('experienceYears');
+            var c = document.getElementById('coreConcepts');
+            function sync() {
+                var isTeacher = roleSelect && roleSelect.value === 'TEACHER';
+                if (teacherFields) teacherFields.classList.toggle('hidden', !isTeacher);
+                [q, e, c].forEach(function (el) {
+                    if (!el) return;
+                    el.required = !!isTeacher;
+                    el.disabled = !isTeacher;
+                });
+            }
+            if (roleSelect) roleSelect.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+</body>
+</html>

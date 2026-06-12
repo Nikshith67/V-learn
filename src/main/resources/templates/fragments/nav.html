@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="navbar(user)" class="nav-shell sticky top-0 z-50 px-4 pt-4 pb-2">
+    <div class="nav-capsule max-w-5xl mx-auto px-5 sm:px-8">
+        <div class="flex justify-between items-center min-h-[3.25rem] py-2">
+            <a th:href="@{/}" class="flex items-center gap-3">
+                <img id="app-logo" src="/images/Vlearn.png" alt="V-Learn" class="app-logo"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"/>
+                <span class="text-xl font-semibold text-vtext hidden">V-Learn</span>
+            </a>
+            <div class="flex items-center gap-4">
+                <th:block th:if="${user != null}">
+                    <span class="text-vmuted text-sm" th:text="${user.fullName}">User</span>
+                    <a th:href="@{/logout}" class="text-vmuted hover:text-vtext text-sm">Logout</a>
+                </th:block>
+                <th:block th:if="${user == null}">
+                    <a th:href="@{/login}" class="text-vmuted hover:text-vtext">Login</a>
+                    <a th:href="@{/register}" class="bg-vaccent text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90">Register</a>
+                </th:block>
+            </div>
+        </div>
+    </div>
+</nav>
+</body>
+</html>
