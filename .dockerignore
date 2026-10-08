@@ -1,0 +1,13 @@
+.git
+.github
+.mvn
+target/
+data/
+vlearn-uploads/
+.vscode/
+*.md
+*.log
+application-local.properties
+src/main/resources/application-local.properties
+.env
+*.env
