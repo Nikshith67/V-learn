@@ -12,6 +12,9 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final AuthService authService;
 
+    @org.springframework.beans.factory.annotation.Value("${vlearn.admin.password:admin123}")
+    private String adminPassword;
+
     public DataInitializer(UserRepository userRepository, AuthService authService) {
         this.userRepository = userRepository;
         this.authService = authService;
@@ -19,16 +22,23 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (userRepository.findByUsername("admin").isEmpty()) {
+        String effectiveAdminPass = (adminPassword != null && !adminPassword.isBlank()) ? adminPassword : "admin123";
+        userRepository.findByUsername("admin").ifPresentOrElse(admin -> {
+            // If ADMIN_PASSWORD env var is explicitly configured and differs from default seed
+            if (!"admin123".equals(effectiveAdminPass)) {
+                admin.setPassword(authService.hashPassword(effectiveAdminPass));
+                userRepository.save(admin);
+            }
+        }, () -> {
             User admin = new User();
             admin.setUsername("admin");
-            admin.setPassword(authService.hashPassword("admin123"));
+            admin.setPassword(authService.hashPassword(effectiveAdminPass));
             admin.setFullName("Administrator");
             admin.setEmail("admin@vlearn.local");
             admin.setRole(User.Role.ADMIN);
             admin.setApproved(true);
             userRepository.save(admin);
-        }
+        });
 
         if (userRepository.findByUsername("student1").isEmpty()) {
             User student = new User();

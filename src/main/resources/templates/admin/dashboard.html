@@ -7,11 +7,18 @@
     <div class="layout-sidebar-main">
         <div th:replace="~{fragments/sidebar :: sidebar('admin-dashboard', ${user})}"></div>
         <main class="layout-sidebar-main__content flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
             <h1 class="text-2xl font-bold">Admin Dashboard</h1>
-            <a th:href="@{/teacher}" class="btn-primary">Video Manager</a>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="document.getElementById('change-password-modal').classList.remove('hidden')"
+                        class="px-3.5 py-2 rounded-lg text-sm font-medium bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600/60 shadow-sm transition flex items-center gap-2">
+                    <span>🔑</span> Change Password
+                </button>
+                <a th:href="@{/teacher}" class="btn-primary">Video Manager</a>
+            </div>
         </div>
-        <p th:if="${message}" class="text-emerald-400 mb-4" th:text="${message}"></p>
+        <p th:if="${message}" class="text-emerald-400 mb-4 font-medium" th:text="${message}"></p>
+        <p th:if="${error}" class="text-rose-400 mb-4 font-medium" th:text="${error}"></p>
 
         <!-- Stats Section -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

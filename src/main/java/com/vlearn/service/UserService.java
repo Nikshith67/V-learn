@@ -84,6 +84,19 @@ public class UserService {
     }
 
     @Transactional
+    public boolean updatePassword(Long userId, String currentPassword, String newPassword) {
+        Optional<User> opt = userRepository.findById(userId);
+        if (opt.isEmpty()) return false;
+        User user = opt.get();
+        if (!authService.checkPassword(currentPassword, user.getPassword())) {
+            return false;
+        }
+        user.setPassword(authService.hashPassword(newPassword));
+        userRepository.save(user);
+        return true;
+    }
+
+    @Transactional
     public User save(User user) {
         return userRepository.save(user);
     }

@@ -168,4 +168,48 @@ public class AuthController {
             (role == User.Role.TEACHER ? "Please wait for admin approval before logging in." : "You can log in now."));
         return "redirect:/";
     }
+
+    @PostMapping("/change-password")
+    public String changePassword(@RequestParam String currentPassword,
+                                 @RequestParam String newPassword,
+                                 @RequestParam String confirmPassword,
+                                 HttpSession session,
+                                 RedirectAttributes ra) {
+        User user = authService.getCurrentUser(session).orElse(null);
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        String redirectUrl = determineRedirectUrl(user.getRole());
+
+        if (currentPassword == null || currentPassword.isBlank()) {
+            ra.addFlashAttribute("error", "Current password cannot be empty.");
+            return redirectUrl;
+        }
+
+        if (newPassword == null || newPassword.length() < 6) {
+            ra.addFlashAttribute("error", "New password must be at least 6 characters.");
+            return redirectUrl;
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            ra.addFlashAttribute("error", "New password and confirmation do not match.");
+            return redirectUrl;
+        }
+
+        boolean success = userService.updatePassword(user.getId(), currentPassword, newPassword);
+        if (!success) {
+            ra.addFlashAttribute("error", "Current password is incorrect.");
+            return redirectUrl;
+        }
+
+        ra.addFlashAttribute("message", "Password changed successfully!");
+        return redirectUrl;
+    }
+
+    private String determineRedirectUrl(User.Role role) {
+        if (role == User.Role.ADMIN) return "redirect:/admin";
+        if (role == User.Role.TEACHER) return "redirect:/teacher";
+        return "redirect:/student/profile";
+    }
 }

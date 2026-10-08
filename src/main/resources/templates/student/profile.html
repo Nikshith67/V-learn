@@ -7,8 +7,18 @@
     <div class="layout-sidebar-main">
         <div th:replace="~{fragments/sidebar :: sidebar('student-profile', ${user})}"></div>
         <main class="layout-sidebar-main__content flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 class="text-2xl font-bold mb-6">My Profile</h1>
-        <p class="text-vmuted mb-6" th:text="${user.fullName}">Name</p>
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <div>
+                <h1 class="text-2xl font-bold">My Profile</h1>
+                <p class="text-vmuted text-sm" th:text="${user.fullName}">Name</p>
+            </div>
+            <button type="button" onclick="document.getElementById('change-password-modal').classList.remove('hidden')"
+                    class="px-3.5 py-2 rounded-lg text-sm font-medium bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600/60 shadow-sm transition flex items-center gap-2">
+                <span>🔑</span> Change Password
+            </button>
+        </div>
+        <p th:if="${message}" class="text-emerald-400 mb-4 font-medium" th:text="${message}"></p>
+        <p th:if="${error}" class="text-rose-400 mb-4 font-medium" th:text="${error}"></p>
 
         <div class="mb-8">
             <h2 class="text-lg font-semibold mb-2">Completed videos</h2>
