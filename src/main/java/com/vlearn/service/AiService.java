@@ -30,7 +30,15 @@ public class AiService {
                      @Value("${vlearn.ai.fallback-model:gemini-3.5-flash-lite}") String fallbackModel,
                      @Value("${vlearn.ai.endpoint:https://generativelanguage.googleapis.com/v1beta/openai/chat/completions}") String endpoint,
                      @Value("${vlearn.ai.max-tokens:${vlearn.nvidia.max-tokens:4096}}") int maxTokens) {
-        this.apiKey = apiKey != null ? apiKey.trim() : "";
+        String cleaned = apiKey != null ? apiKey.trim() : "";
+        while ((cleaned.startsWith("\"") && cleaned.endsWith("\"")) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+            if (cleaned.length() <= 1) break;
+            cleaned = cleaned.substring(1, cleaned.length() - 1).trim();
+        }
+        if (cleaned.toLowerCase().startsWith("bearer ")) {
+            cleaned = cleaned.substring(7).trim();
+        }
+        this.apiKey = cleaned;
         this.model = model;
         this.fallbackModel = fallbackModel;
         this.endpoint = endpoint;
