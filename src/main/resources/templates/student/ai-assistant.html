@@ -433,9 +433,11 @@
             .ai-layout {
                 flex-direction: column;
                 height: auto;
+                min-height: 100vh;
             }
             .ai-main {
-                height: 100vh;
+                height: calc(100dvh - 100px);
+                min-height: 500px;
             }
             .ai-msg {
                 max-width: 92%;

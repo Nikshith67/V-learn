@@ -29,11 +29,22 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
 body {
     margin: 0;
     min-height: 100vh;
+    min-height: 100dvh;
     font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: var(--text);
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     background:
         radial-gradient(circle at 85% 8%, rgba(91, 155, 213, 0.12), transparent 42%),
         radial-gradient(circle at 12% 88%, rgba(217, 140, 114, 0.1), transparent 48%),
@@ -300,8 +311,12 @@ textarea.field {
 
 /* Login page (Kidstera palette) -------------------------------------------- */
 .login-theme-bg {
-    height: 100dvh;
-    overflow: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     background-color: #F9F5F0;
     background-image:
         radial-gradient(ellipse 80% 50% at 50% -20%, rgba(91, 155, 213, 0.18), transparent),
@@ -311,7 +326,7 @@ textarea.field {
 
 .login-shell {
     width: min(1080px, 92vw);
-    height: min(760px, 92dvh);
+    min-height: min(760px, 92dvh);
     border-radius: 2rem;
     overflow: hidden;
     border: 1px solid rgba(125, 137, 168, 0.35);
@@ -480,7 +495,8 @@ textarea.field {
     width: 308px;
     height: 100vh;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .layout-sidebar-main > .layout-sidebar-main__content {
@@ -491,25 +507,64 @@ textarea.field {
     max-width: none;
     overflow-x: hidden;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 900px) {
-    .layout-sidebar-main > .sidebar-shell {
-        position: relative;
-        width: 100%;
-        height: auto;
-        min-height: auto;
-        overflow: visible;
+    .layout-sidebar-main {
+        flex-direction: column !important;
+        min-height: auto !important;
+        height: auto !important;
+        overflow: visible !important;
     }
 
-    .layout-sidebar-main {
-        flex-direction: column;
+    .layout-sidebar-main > .sidebar-shell,
+    .sidebar-shell {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 4px 16px rgba(74, 78, 105, 0.15) !important;
+        padding: 0.75rem 1rem !important;
+        overflow: visible !important;
     }
 
     .layout-sidebar-main > .layout-sidebar-main__content {
-        margin-left: 0;
-        width: 100%;
-        min-height: 0;
+        margin-left: 0 !important;
+        width: 100% !important;
+        min-height: auto !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding-top: 1rem !important;
+    }
+
+    .sidebar-brand {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 0.2rem 0.5rem 0.5rem !important;
+        border-bottom: 1px solid rgba(234, 250, 247, 0.16) !important;
+    }
+
+    .sidebar-brand img {
+        height: 36px !important;
+        width: 36px !important;
+    }
+
+    .sidebar-nav {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 0.4rem !important;
+        justify-content: flex-start !important;
+    }
+
+    .sidebar-link {
+        padding: 0.45rem 0.75rem !important;
+        font-size: 0.82rem !important;
     }
 }
 
@@ -586,11 +641,24 @@ textarea.field {
 @media (max-width: 960px) {
     .login-shell {
         grid-template-columns: 1fr;
-        height: min(760px, 95dvh);
+        height: auto;
+        min-height: auto;
+        max-height: none;
+        overflow: visible;
+        margin: 1rem auto;
+    }
+
+    .login-shell > .login-visual {
+        border-radius: 1.85rem 1.85rem 0 0;
+    }
+
+    .login-shell > .login-form-side {
+        border-radius: 0 0 1.85rem 1.85rem;
     }
 
     .login-visual {
-        min-height: 300px;
+        min-height: 140px;
+        height: auto;
     }
 
     .login-visual-shape {
