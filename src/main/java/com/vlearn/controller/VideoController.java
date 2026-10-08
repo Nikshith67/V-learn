@@ -27,11 +27,15 @@ public class VideoController {
 
     @GetMapping("/watch/{id}")
     public String watch(@PathVariable Long id, HttpSession session, Model model) {
-        User student = authService.getCurrentUser(session).orElseThrow();
-        if (student.getRole() != User.Role.STUDENT) {
-            return "redirect:/";
+        User student = authService.getCurrentUser(session).orElse(null);
+        if (student == null || student.getRole() != User.Role.STUDENT) {
+            return "redirect:/login";
         }
-        Video video = videoService.findByIdWithUploader(id).orElseThrow();
+        var videoOpt = videoService.findByIdWithUploader(id);
+        if (videoOpt.isEmpty()) {
+            return "redirect:/student";
+        }
+        Video video = videoOpt.get();
         boolean canTakeTest = videoProgressService.canTakeTest(student, video);
         double resumePercent = videoProgressService.getResumePercent(student, video);
         User teacher = video.getUploadedBy();
@@ -60,7 +64,8 @@ public class VideoController {
         }
         Video video = videoService.findById(videoId).orElse(null);
         if (video == null) return ResponseEntity.notFound().build();
-        videoProgressService.updateProgress(student, video, progressPercent);
+        double cleanProgress = Math.max(0.0, Math.min(100.0, progressPercent));
+        videoProgressService.updateProgress(student, video, cleanProgress);
         return ResponseEntity.ok().build();
     }
 }

@@ -42,8 +42,16 @@ public class TestController {
 
     @GetMapping("/{videoId}")
     public String takeTest(@PathVariable Long videoId, HttpSession session, Model model) {
-        User student = authService.getCurrentUser(session).orElseThrow();
-        Video video = videoService.findById(videoId).orElseThrow();
+        User student = authService.getCurrentUser(session).orElse(null);
+        if (student == null || student.getRole() != User.Role.STUDENT) {
+            return "redirect:/login";
+        }
+        var videoOpt = videoService.findById(videoId);
+        if (videoOpt.isEmpty()) {
+            return "redirect:/student";
+        }
+        Video video = videoOpt.get();
+
         if (!videoProgressService.canTakeTest(student, video)) {
             return "redirect:/video/watch/" + videoId + "?error=Watch 80% of the video first";
         }
@@ -63,8 +71,22 @@ public class TestController {
                              @RequestParam Map<String, String> allParams,
                              HttpSession session,
                              RedirectAttributes ra) {
-        User student = authService.getCurrentUser(session).orElseThrow();
-        Video video = videoService.findById(videoId).orElseThrow();
+        User student = authService.getCurrentUser(session).orElse(null);
+        if (student == null || student.getRole() != User.Role.STUDENT) {
+            return "redirect:/login";
+        }
+        var videoOpt = videoService.findById(videoId);
+        if (videoOpt.isEmpty()) {
+            return "redirect:/student";
+        }
+        Video video = videoOpt.get();
+
+        // Enforce 80% completion security check on submit
+        if (!videoProgressService.canTakeTest(student, video)) {
+            ra.addFlashAttribute("error", "You must watch at least 80% of the video before submitting this test.");
+            return "redirect:/video/watch/" + videoId;
+        }
+
         List<Question> questions = questionService.findByVideoId(videoId);
         int correct = 0;
         for (Question q : questions) {

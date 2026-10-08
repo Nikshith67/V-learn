@@ -3,6 +3,8 @@ package com.vlearn.controller;
 import com.vlearn.entity.User;
 import com.vlearn.service.AuthService;
 import com.vlearn.service.UserService;
+import com.vlearn.service.RateLimiterService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,10 +18,20 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserService userService;
+    private final RateLimiterService rateLimiterService;
 
-    public AuthController(AuthService authService, UserService userService) {
+    public AuthController(AuthService authService, UserService userService, RateLimiterService rateLimiterService) {
         this.authService = authService;
         this.userService = userService;
+        this.rateLimiterService = rateLimiterService;
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String xf = request.getHeader("X-Forwarded-For");
+        if (xf != null && !xf.isBlank()) {
+            return xf.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     @GetMapping("/")
@@ -42,13 +54,25 @@ public class AuthController {
     @PostMapping("/login")
     public String login(@RequestParam String username,
                         @RequestParam String password,
+                        HttpServletRequest request,
                         HttpSession session,
                         RedirectAttributes ra) {
+        String ip = getClientIp(request);
+
+        // Brute-force protection: check rate limit
+        if (rateLimiterService.isLoginBlocked(ip, username)) {
+            ra.addFlashAttribute("error", "🔒 Too many failed login attempts. Please wait 2 minutes before trying again.");
+            return "redirect:/login";
+        }
+
         var user = authService.login(username, password);
         if (user.isEmpty()) {
+            rateLimiterService.recordFailedLogin(ip, username);
             ra.addFlashAttribute("error", "Invalid username or password, or teacher not approved.");
             return "redirect:/login";
         }
+
+        rateLimiterService.recordSuccessfulLogin(ip, username);
         authService.setSessionUser(session, user.get());
         return "redirect:/";
     }
@@ -69,11 +93,33 @@ public class AuthController {
     public String register(User user,
                            @RequestParam String password,
                            @RequestParam String roleStr,
+                           HttpServletRequest request,
                            RedirectAttributes ra) {
-        if (user.getUsername() == null || user.getUsername().isBlank()) {
-            ra.addFlashAttribute("error", "Username is required.");
+        String ip = getClientIp(request);
+
+        // Registration rate limiting (prevent automated account creation spam)
+        if (rateLimiterService.isRegisterBlocked(ip)) {
+            ra.addFlashAttribute("error", "🔒 Too many registration attempts from this network. Please wait 10 minutes.");
             return "redirect:/register";
         }
+        rateLimiterService.recordRegisterAttempt(ip);
+
+        if (user.getUsername() == null || user.getUsername().trim().length() < 3) {
+            ra.addFlashAttribute("error", "Username must be at least 3 characters.");
+            return "redirect:/register";
+        }
+        String cleanUsername = user.getUsername().trim();
+        if (!cleanUsername.matches("^[a-zA-Z0-9_]{3,30}$")) {
+            ra.addFlashAttribute("error", "Username can only contain letters, numbers, and underscores (3-30 characters).");
+            return "redirect:/register";
+        }
+        user.setUsername(cleanUsername);
+
+        if (password == null || password.length() < 6) {
+            ra.addFlashAttribute("error", "Password must be at least 6 characters.");
+            return "redirect:/register";
+        }
+
         if (userService.usernameExists(user.getUsername())) {
             ra.addFlashAttribute("error", "Username already exists.");
             return "redirect:/register";

@@ -38,7 +38,10 @@ public class AdminController {
 
     @GetMapping
     public String dashboard(HttpSession session, Model model) {
-        User admin = authService.getCurrentUser(session).orElseThrow();
+        User admin = authService.getCurrentUser(session).orElse(null);
+        if (admin == null || admin.getRole() != User.Role.ADMIN) {
+            return "redirect:/login";
+        }
         List<User> pendingTeachers = userService.findTeachersPendingApproval();
         var videos = videoService.findAll();
 
@@ -50,14 +53,22 @@ public class AdminController {
     }
 
     @PostMapping("/approve-teacher")
-    public String approveTeacher(@RequestParam Long teacherId, RedirectAttributes ra) {
+    public String approveTeacher(@RequestParam Long teacherId, HttpSession session, RedirectAttributes ra) {
+        User admin = authService.getCurrentUser(session).orElse(null);
+        if (admin == null || admin.getRole() != User.Role.ADMIN) {
+            return "redirect:/login";
+        }
         boolean ok = userService.approveTeacher(teacherId);
         ra.addFlashAttribute("message", ok ? "Teacher approved." : "Could not approve this request. It may have been removed or already processed.");
         return "redirect:/admin";
     }
 
     @PostMapping("/reject-teacher")
-    public String rejectTeacher(@RequestParam Long teacherId, RedirectAttributes ra) {
+    public String rejectTeacher(@RequestParam Long teacherId, HttpSession session, RedirectAttributes ra) {
+        User admin = authService.getCurrentUser(session).orElse(null);
+        if (admin == null || admin.getRole() != User.Role.ADMIN) {
+            return "redirect:/login";
+        }
         boolean ok = userService.rejectTeacher(teacherId);
         ra.addFlashAttribute("message", ok ? "Teacher registration rejected." : "Could not reject this request. It may have been removed or already processed.");
         return "redirect:/admin";
@@ -65,7 +76,10 @@ public class AdminController {
 
     @PostMapping("/video/delete")
     public String deleteVideo(@RequestParam Long videoId, HttpSession session, RedirectAttributes ra) {
-        User admin = authService.getCurrentUser(session).orElseThrow();
+        User admin = authService.getCurrentUser(session).orElse(null);
+        if (admin == null || admin.getRole() != User.Role.ADMIN) {
+            return "redirect:/login";
+        }
         boolean ok = videoService.deleteVideo(videoId, admin);
         ra.addFlashAttribute("message", ok ? "Video deleted." : "Failed to delete video.");
         return "redirect:/admin";
@@ -73,7 +87,10 @@ public class AdminController {
 
     @GetMapping("/results")
     public String studentResults(HttpSession session, Model model) {
-        User admin = authService.getCurrentUser(session).orElseThrow();
+        User admin = authService.getCurrentUser(session).orElse(null);
+        if (admin == null || admin.getRole() != User.Role.ADMIN) {
+            return "redirect:/login";
+        }
         var results = testResultService.findAll();
         model.addAttribute("user", admin);
         model.addAttribute("results", results);

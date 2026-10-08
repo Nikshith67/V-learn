@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{fragments/head :: head('AI Assistant')}"></th:block>
+    <style>
+        /* ── AI Assistant layout ───────────────────────────────────── */
+        .ai-layout {
+            display: flex;
+            height: calc(100vh - 0px);
+            overflow: hidden;
+        }
+
+        .ai-layout > .sidebar-shell {
+            flex-shrink: 0;
+        }
+
+        .ai-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── Header bar ───────────────────────────────────────────── */
+        .ai-header {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.9rem 1.5rem;
+            background: rgba(255,255,255,0.97);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 12px rgba(74,78,105,0.06);
+        }
+
+        .ai-header-title {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-weight: 600;
+            font-size: 1.08rem;
+            color: var(--text-heading);
+        }
+
+        .ai-sparkle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.1rem;
+            height: 2.1rem;
+            border-radius: 0.65rem;
+            background: linear-gradient(135deg, var(--accent-blue), #805AD5);
+            color: #fff;
+            font-size: 1.15rem;
+            box-shadow: 0 4px 14px rgba(91,155,213,0.35);
+            animation: sparkle-pulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes sparkle-pulse {
+            0%, 100% { box-shadow: 0 4px 14px rgba(91,155,213,0.35); transform: scale(1); }
+            50%      { box-shadow: 0 6px 20px rgba(128,90,213,0.45); transform: scale(1.06); }
+        }
+
+        .ai-video-picker select {
+            padding: 0.45rem 0.75rem;
+            border-radius: 9999px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text);
+            font-size: 0.85rem;
+            max-width: 320px;
+            cursor: pointer;
+        }
+
+        .ai-video-picker select:focus {
+            outline: 2px solid rgba(91,155,213,0.5);
+            border-color: var(--accent-blue);
+        }
+
+        /* ── Chat area ────────────────────────────────────────────── */
+        .ai-chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            scroll-behavior: smooth;
+        }
+
+        .ai-chat-area::-webkit-scrollbar { width: 6px; }
+        .ai-chat-area::-webkit-scrollbar-track { background: transparent; }
+        .ai-chat-area::-webkit-scrollbar-thumb {
+            background: rgba(125,137,168,0.25);
+            border-radius: 999px;
+        }
+
+        /* ── Welcome card ────────────────────────────────────────── */
+        .ai-welcome {
+            max-width: 600px;
+            margin: auto;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .ai-welcome-icon {
+            font-size: 3rem;
+            margin-bottom: 0.75rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-8px); }
+        }
+
+        .ai-welcome h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            margin: 0 0 0.5rem;
+        }
+
+        .ai-welcome p {
+            color: var(--muted);
+            font-size: 0.92rem;
+            margin: 0 0 1.5rem;
+            line-height: 1.55;
+        }
+
+        .ai-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .ai-suggestion-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.95);
+            color: var(--text);
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .ai-suggestion-btn:hover {
+            border-color: var(--accent-blue);
+            background: rgba(91,155,213,0.08);
+            color: var(--accent-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(91,155,213,0.15);
+        }
+
+        /* ── Message bubbles ─────────────────────────────────────── */
+        .ai-msg {
+            display: flex;
+            gap: 0.6rem;
+            max-width: 78%;
+            animation: msg-in 0.3s ease-out;
+        }
+
+        @keyframes msg-in {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .ai-msg--user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .ai-msg--ai {
+            align-self: flex-start;
+        }
+
+        .ai-msg-avatar {
+            flex-shrink: 0;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            margin-top: 0.15rem;
+        }
+
+        .ai-msg--user .ai-msg-avatar {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-2));
+            color: #fff;
+        }
+
+        .ai-msg--ai .ai-msg-avatar {
+            background: linear-gradient(135deg, #805AD5, var(--accent-blue));
+            color: #fff;
+        }
+
+        .ai-msg-bubble {
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        .ai-msg--user .ai-msg-bubble {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-2));
+            color: #fff;
+            border-bottom-right-radius: 0.3rem;
+            box-shadow: 0 4px 14px rgba(91,155,213,0.25);
+        }
+
+        .ai-msg--ai .ai-msg-bubble {
+            background: rgba(255,255,255,0.98);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 0.3rem;
+            box-shadow: 0 4px 14px rgba(74,78,105,0.08);
+        }
+
+        /* Markdown rendering inside AI bubbles */
+        .ai-msg--ai .ai-msg-bubble h1,
+        .ai-msg--ai .ai-msg-bubble h2,
+        .ai-msg--ai .ai-msg-bubble h3 {
+            font-weight: 700;
+            margin: 0.8rem 0 0.3rem;
+            color: var(--text-heading);
+        }
+        .ai-msg--ai .ai-msg-bubble h1 { font-size: 1.1rem; }
+        .ai-msg--ai .ai-msg-bubble h2 { font-size: 1rem; }
+        .ai-msg--ai .ai-msg-bubble h3 { font-size: 0.95rem; }
+
+        .ai-msg--ai .ai-msg-bubble p {
+            margin: 0.35rem 0;
+        }
+
+        .ai-msg--ai .ai-msg-bubble ul,
+        .ai-msg--ai .ai-msg-bubble ol {
+            margin: 0.4rem 0;
+            padding-left: 1.3rem;
+        }
+
+        .ai-msg--ai .ai-msg-bubble li {
+            margin-bottom: 0.2rem;
+        }
+
+        .ai-msg--ai .ai-msg-bubble code {
+            background: rgba(125,137,168,0.12);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.3rem;
+            font-size: 0.84rem;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .ai-msg--ai .ai-msg-bubble pre {
+            background: rgba(74,78,105,0.06);
+            border: 1px solid var(--border);
+            border-radius: 0.6rem;
+            padding: 0.75rem;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+        }
+
+        .ai-msg--ai .ai-msg-bubble pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .ai-msg--ai .ai-msg-bubble strong {
+            font-weight: 600;
+            color: var(--text-heading);
+        }
+
+        /* ── Typing indicator ─────────────────────────────────────── */
+        .ai-typing {
+            display: flex;
+            gap: 0.6rem;
+            max-width: 78%;
+            align-self: flex-start;
+            animation: msg-in 0.3s ease-out;
+        }
+
+        .ai-typing-dots {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.85rem 1.1rem;
+            background: rgba(255,255,255,0.98);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            border-bottom-left-radius: 0.3rem;
+        }
+
+        .ai-typing-dot {
+            width: 0.45rem;
+            height: 0.45rem;
+            border-radius: 50%;
+            background: var(--muted);
+            animation: typing-bounce 1.4s infinite;
+        }
+
+        .ai-typing-dot:nth-child(2) { animation-delay: 0.15s; }
+        .ai-typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes typing-bounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30%            { transform: translateY(-5px); opacity: 1; }
+        }
+
+        /* ── Input bar ────────────────────────────────────────────── */
+        .ai-input-bar {
+            flex-shrink: 0;
+            display: flex;
+            align-items: flex-end;
+            gap: 0.6rem;
+            padding: 0.85rem 1.5rem 1.1rem;
+            background: rgba(255,255,255,0.97);
+            border-top: 1px solid var(--border);
+        }
+
+        .ai-input-wrap {
+            flex: 1;
+            position: relative;
+        }
+
+        .ai-input {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            padding-right: 2.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: inherit;
+            resize: none;
+            overflow-y: hidden;
+            min-height: 2.6rem;
+            max-height: 8rem;
+            line-height: 1.45;
+            transition: border-color 0.15s ease;
+        }
+
+        .ai-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(91,155,213,0.12);
+        }
+
+        .ai-input::placeholder {
+            color: var(--muted);
+        }
+
+        .ai-send-btn {
+            flex-shrink: 0;
+            width: 2.6rem;
+            height: 2.6rem;
+            border-radius: 0.8rem;
+            border: none;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-2));
+            color: #fff;
+            font-size: 1.15rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(91,155,213,0.35);
+            transition: all 0.15s ease;
+        }
+
+        .ai-send-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(91,155,213,0.45);
+        }
+
+        .ai-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .ai-summarize-btn {
+            flex-shrink: 0;
+            padding: 0.55rem 1rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(128,90,213,0.4);
+            background: rgba(128,90,213,0.08);
+            color: #805AD5;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .ai-summarize-btn:hover:not(:disabled) {
+            background: rgba(128,90,213,0.15);
+            border-color: #805AD5;
+            transform: translateY(-1px);
+        }
+
+        .ai-summarize-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ── Video context badge ──────────────────────────────────── */
+        .ai-video-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            background: rgba(91,155,213,0.1);
+            border: 1px solid rgba(91,155,213,0.25);
+            color: var(--accent-blue);
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+
+        /* ── Responsive ───────────────────────────────────────────── */
+        @media (max-width: 900px) {
+            .ai-layout {
+                flex-direction: column;
+                height: auto;
+            }
+            .ai-main {
+                height: 100vh;
+            }
+            .ai-msg {
+                max-width: 92%;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-vdark text-vtext antialiased">
+    <div class="ai-layout">
+        <div th:replace="~{fragments/sidebar :: sidebar('student-ai', ${user})}"></div>
+        <div class="ai-main">
+            <!-- Header -->
+            <div class="ai-header">
+                <div class="ai-header-title">
+                    <span class="ai-sparkle">✨</span>
+                    AI Assistant
+                    <span id="videoBadge" class="ai-video-badge" style="display:none;">
+                        📹 <span id="videoBadgeText"></span>
+                    </span>
+                </div>
+                <div class="ai-video-picker">
+                    <select id="videoPicker" onchange="onVideoPicked()">
+                        <option value="">— Select a video for context —</option>
+                        <th:block th:each="v : ${allVideos}">
+                            <option th:value="${v.id}"
+                                    th:text="${v.title + ' (' + v.subject + ')'}"
+                                    th:selected="${selectedVideoId != null and v.id == selectedVideoId}"></option>
+                        </th:block>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Chat area -->
+            <div class="ai-chat-area" id="chatArea">
+                <!-- Welcome message (hidden once chat starts) -->
+                <div class="ai-welcome" id="welcomeCard">
+                    <div class="ai-welcome-icon">🤖</div>
+                    <h2>Hello! I'm your AI Study Buddy</h2>
+                    <p>
+                        I can help you understand video lessons, answer your questions about any subject,
+                        and even summarize videos for you. Select a video above for context-aware answers,
+                        or just ask me anything!
+                    </p>
+                    <div class="ai-suggestions" id="suggestions">
+                        <button class="ai-suggestion-btn" onclick="sendSuggestion('Summarize this video for me')" id="suggestSummarize" style="display:none;">
+                            📝 Summarize this video
+                        </button>
+                        <button class="ai-suggestion-btn" onclick="sendSuggestion('What are the key concepts in this lesson?')">
+                            💡 Key concepts
+                        </button>
+                        <button class="ai-suggestion-btn" onclick="sendSuggestion('Explain this topic in simple terms')">
+                            🎯 Explain simply
+                        </button>
+                        <button class="ai-suggestion-btn" onclick="sendSuggestion('Help me prepare for the test on this video')">
+                            📚 Test preparation
+                        </button>
+                        <button class="ai-suggestion-btn" onclick="sendSuggestion('What should I focus on to understand this subject better?')">
+                            🔍 Study tips
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input bar -->
+            <div class="ai-input-bar">
+                <button class="ai-summarize-btn" id="summarizeBtn" onclick="summarizeVideo()"
+                        style="display:none;" title="Generate AI summary of the selected video">
+                    ✨ Summarize
+                </button>
+                <div class="ai-input-wrap">
+                    <textarea class="ai-input" id="chatInput"
+                              placeholder="Ask me anything about your studies..."
+                              rows="1"
+                              onkeydown="handleInputKey(event)"
+                              oninput="autoResizeInput()"></textarea>
+                </div>
+                <button class="ai-send-btn" id="sendBtn" onclick="sendMessage()" title="Send message">
+                    ➤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+    (function() {
+        // ── State ───────────────────────────────────────────────────
+        let selectedVideoId = /*[[${selectedVideoId}]]*/ null;
+        let chatHistory = []; // array of { role, content }
+        let isLoading = false;
+
+        const chatArea     = document.getElementById('chatArea');
+        const chatInput    = document.getElementById('chatInput');
+        const sendBtn      = document.getElementById('sendBtn');
+        const summarizeBtn = document.getElementById('summarizeBtn');
+        const welcomeCard  = document.getElementById('welcomeCard');
+        const videoPicker  = document.getElementById('videoPicker');
+        const videoBadge   = document.getElementById('videoBadge');
+        const videoBadgeText = document.getElementById('videoBadgeText');
+        const suggestSummarize = document.getElementById('suggestSummarize');
+
+        // Init: if video was pre-selected
+        if (selectedVideoId) {
+            updateVideoUI();
+        }
+
+        // ── Video picker ────────────────────────────────────────────
+        window.onVideoPicked = function() {
+            const val = videoPicker.value;
+            selectedVideoId = val ? parseInt(val) : null;
+            updateVideoUI();
+        };
+
+        function updateVideoUI() {
+            if (selectedVideoId && videoPicker.value) {
+                const opt = videoPicker.options[videoPicker.selectedIndex];
+                videoBadge.style.display = 'inline-flex';
+                videoBadgeText.textContent = opt.text;
+                summarizeBtn.style.display = 'flex';
+                suggestSummarize.style.display = 'inline-flex';
+            } else {
+                videoBadge.style.display = 'none';
+                summarizeBtn.style.display = 'none';
+                suggestSummarize.style.display = 'none';
+            }
+        }
+
+        // ── Send message ────────────────────────────────────────────
+        window.sendMessage = function() {
+            const text = chatInput.value.trim();
+            if (!text || isLoading) return;
+
+            hideWelcome();
+            appendMessage('user', text);
+            chatHistory.push({ role: 'user', content: text });
+            chatInput.value = '';
+            autoResizeInput();
+            setLoading(true);
+
+            const payload = {
+                message: text,
+                videoId: selectedVideoId,
+                history: chatHistory.slice(0, -1) // don't include the message we just sent
+            };
+
+            fetch('/student/ai/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                setLoading(false);
+                const reply = data.response || data.error || 'No response.';
+                appendMessage('ai', reply);
+                chatHistory.push({ role: 'assistant', content: reply });
+            })
+            .catch(() => {
+                setLoading(false);
+                appendMessage('ai', '❌ Network error. Please try again.');
+            });
+        };
+
+        // ── Summarize ───────────────────────────────────────────────
+        window.summarizeVideo = function() {
+            if (!selectedVideoId || isLoading) return;
+
+            hideWelcome();
+            appendMessage('user', '📝 Summarize this video for me');
+            chatHistory.push({ role: 'user', content: 'Summarize this video for me' });
+            setLoading(true);
+
+            fetch('/student/ai/summarize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ videoId: selectedVideoId })
+            })
+            .then(r => r.json())
+            .then(data => {
+                setLoading(false);
+                const reply = data.response || data.error || 'No response.';
+                appendMessage('ai', reply);
+                chatHistory.push({ role: 'assistant', content: reply });
+            })
+            .catch(() => {
+                setLoading(false);
+                appendMessage('ai', '❌ Network error. Please try again.');
+            });
+        };
+
+        // ── Suggestion ──────────────────────────────────────────────
+        window.sendSuggestion = function(text) {
+            chatInput.value = text;
+            sendMessage();
+        };
+
+        // ── Keyboard ────────────────────────────────────────────────
+        window.handleInputKey = function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        };
+
+        // ── Auto-resize textarea ────────────────────────────────────
+        window.autoResizeInput = function() {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 128) + 'px';
+        };
+
+        // ── UI helpers ──────────────────────────────────────────────
+        function hideWelcome() {
+            if (welcomeCard) welcomeCard.style.display = 'none';
+        }
+
+        function setLoading(loading) {
+            isLoading = loading;
+            sendBtn.disabled = loading;
+            summarizeBtn.disabled = loading;
+            chatInput.disabled = loading;
+
+            // Show/hide typing indicator
+            const existing = document.getElementById('typingIndicator');
+            if (loading && !existing) {
+                const typingEl = document.createElement('div');
+                typingEl.id = 'typingIndicator';
+                typingEl.className = 'ai-typing';
+                typingEl.innerHTML = `
+                    <div class="ai-msg-avatar" style="background:linear-gradient(135deg,#805AD5,var(--accent-blue));color:#fff;">🤖</div>
+                    <div class="ai-typing-dots">
+                        <span class="ai-typing-dot"></span>
+                        <span class="ai-typing-dot"></span>
+                        <span class="ai-typing-dot"></span>
+                    </div>
+                `;
+                chatArea.appendChild(typingEl);
+                scrollToBottom();
+            } else if (!loading && existing) {
+                existing.remove();
+            }
+        }
+
+        function appendMessage(role, content) {
+            const isUser = role === 'user';
+            const wrapper = document.createElement('div');
+            wrapper.className = 'ai-msg ' + (isUser ? 'ai-msg--user' : 'ai-msg--ai');
+
+            const avatar = document.createElement('div');
+            avatar.className = 'ai-msg-avatar';
+            avatar.textContent = isUser ? '👤' : '🤖';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'ai-msg-bubble';
+
+            if (isUser) {
+                bubble.textContent = content;
+            } else {
+                bubble.innerHTML = renderMarkdown(content);
+            }
+
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(bubble);
+            chatArea.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            requestAnimationFrame(() => {
+                chatArea.scrollTop = chatArea.scrollHeight;
+            });
+        }
+
+        /**
+         * Very lightweight markdown → HTML renderer.
+         * Handles: headers, bold, italic, code blocks, inline code, lists, line breaks.
+         */
+        function renderMarkdown(text) {
+            if (!text) return '';
+            let html = text;
+
+            // Escape HTML
+            html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Code blocks (``` ... ```)
+            html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(_, lang, code) {
+                return '<pre><code>' + code.trim() + '</code></pre>';
+            });
+
+            // Inline code
+            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            // Headers
+            html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+            html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+            // Bold & italic
+            html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+            // Unordered lists
+            html = html.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>\n?)+/g, function(match) {
+                return '<ul>' + match + '</ul>';
+            });
+
+            // Ordered lists
+            html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+            // Paragraphs (double newlines)
+            html = html.replace(/\n\n+/g, '</p><p>');
+
+            // Single newlines → <br>
+            html = html.replace(/\n/g, '<br>');
+
+            // Wrap in paragraph
+            html = '<p>' + html + '</p>';
+
+            // Clean up empty paragraphs
+            html = html.replace(/<p>\s*<\/p>/g, '');
+
+            return html;
+        }
+
+        // Focus the input on load
+        chatInput.focus();
+    })();
+    </script>
+</body>
+</html>

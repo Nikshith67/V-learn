@@ -40,16 +40,31 @@ public class VideoService {
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
     }
 
+    private static final java.util.Set<String> ALLOWED_EXTENSIONS = java.util.Set.of(".mp4", ".webm", ".mkv", ".mov");
+
+    private String validateAndGetExtension(MultipartFile file) {
+        String orig = file.getOriginalFilename();
+        if (orig == null || !orig.contains(".")) {
+            throw new IllegalArgumentException("File must have a valid video extension (.mp4, .webm, .mkv, .mov)");
+        }
+        String ext = orig.substring(orig.lastIndexOf('.')).toLowerCase().trim();
+        if (!ALLOWED_EXTENSIONS.contains(ext)) {
+            throw new IllegalArgumentException("Invalid file type: " + ext + ". Only video files (.mp4, .webm, .mkv, .mov) are allowed.");
+        }
+        return ext;
+    }
+
     @Transactional
     public Video save(Video video, User uploadedBy, MultipartFile file) throws IOException {
         video.setUploadedBy(uploadedBy);
         if (file != null && !file.isEmpty()) {
             Files.createDirectories(uploadRoot);
-            String ext = file.getOriginalFilename() != null && file.getOriginalFilename().contains(".")
-                ? file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf('.'))
-                : ".mp4";
+            String ext = validateAndGetExtension(file);
             String filename = UUID.randomUUID() + ext;
-            Path target = uploadRoot.resolve(filename);
+            Path target = uploadRoot.resolve(filename).normalize();
+            if (!target.startsWith(uploadRoot)) {
+                throw new SecurityException("Invalid file path detected");
+            }
             file.transferTo(target.toFile());
             video.setFilePath(filename);
         }
@@ -88,16 +103,17 @@ public class VideoService {
         video.setDescription(description);
         if (file != null && !file.isEmpty()) {
             Files.createDirectories(uploadRoot);
-            String ext = file.getOriginalFilename() != null && file.getOriginalFilename().contains(".")
-                ? file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf('.'))
-                : ".mp4";
+            String ext = validateAndGetExtension(file);
             String filename = UUID.randomUUID() + ext;
-            Path target = uploadRoot.resolve(filename);
+            Path target = uploadRoot.resolve(filename).normalize();
+            if (!target.startsWith(uploadRoot)) {
+                throw new SecurityException("Invalid file path detected");
+            }
             file.transferTo(target.toFile());
             String oldPath = video.getFilePath();
             video.setFilePath(filename);
             if (oldPath != null && !oldPath.isBlank()) {
-                Files.deleteIfExists(uploadRoot.resolve(oldPath));
+                Files.deleteIfExists(uploadRoot.resolve(oldPath).normalize());
             }
         }
         videoRepository.save(video);

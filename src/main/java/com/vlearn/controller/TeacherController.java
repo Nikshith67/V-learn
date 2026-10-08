@@ -63,6 +63,9 @@ public class TeacherController {
         try {
             videoService.save(video, teacher, file);
             ra.addFlashAttribute("message", "Video uploaded successfully.");
+        } catch (IllegalArgumentException | SecurityException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/teacher/video/upload";
         } catch (IOException e) {
             ra.addFlashAttribute("error", "Failed to save file: " + e.getMessage());
         }
@@ -165,6 +168,9 @@ public class TeacherController {
             } else {
                 ra.addFlashAttribute("error", "You cannot edit this video.");
             }
+        } catch (IllegalArgumentException | SecurityException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/teacher/video/" + id + "/edit";
         } catch (IOException e) {
             ra.addFlashAttribute("error", "Failed to update file: " + e.getMessage());
         }

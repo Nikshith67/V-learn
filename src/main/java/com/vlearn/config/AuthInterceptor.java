@@ -28,16 +28,31 @@ public class AuthInterceptor implements HandlerInterceptor {
     }
 
     private static boolean isPublic(String path) {
-        if (path == null) return true;
-        for (String prefix : PUBLIC_PATHS) {
-            if (path.startsWith(prefix)) return true;
+        if (path == null) return false;
+        // Exact public routes
+        if (path.equals("/") || path.equals("/login") || path.equals("/register")
+                || path.equals("/logout") || path.startsWith("/error")) {
+            return true;
         }
-        return false;
+        // Public static assets
+        return path.startsWith("/css/") || path.startsWith("/js/")
+                || path.startsWith("/images/") || path.startsWith("/favicon.ico");
     }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        if (isPublic(request.getRequestURI())) return true;
+        String path = request.getRequestURI();
+
+        // Lockdown H2 Console completely from unauthorized/external access
+        if (path.startsWith("/h2-console")) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access to database console is disabled for security.");
+            return false;
+        }
+
+        // Allow public pages and assets
+        if (isPublic(path)) {
+            return true;
+        }
 
         HttpSession session = request.getSession(false);
         if (session == null || !authService.isLoggedIn(session)) {
@@ -46,19 +61,27 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         String role = authService.getCurrentUserRole(session);
-        String path = request.getRequestURI();
 
+        // Strict role validation
         if (path.startsWith("/admin") && !User.Role.ADMIN.name().equals(role)) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Admin only");
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied: Administrator role required.");
             return false;
         }
+
         if (path.startsWith("/teacher")
-            && !(User.Role.TEACHER.name().equals(role) || User.Role.ADMIN.name().equals(role))) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Teacher only");
+                && !(User.Role.TEACHER.name().equals(role) || User.Role.ADMIN.name().equals(role))) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied: Teacher role required.");
             return false;
         }
-        if (path.startsWith("/student") && !User.Role.STUDENT.name().equals(role)) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Student only");
+
+        if ((path.startsWith("/student") || path.startsWith("/test"))
+                && !User.Role.STUDENT.name().equals(role)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied: Student role required.");
+            return false;
+        }
+
+        if (path.startsWith("/video/watch") && !User.Role.STUDENT.name().equals(role)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied: Student role required.");
             return false;
         }
 

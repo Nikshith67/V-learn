@@ -34,3 +34,9 @@ build/
 data/
 *.db
 vlearn-uploads/
+
+### Local Secrets (Never commit to Git) ###
+application-local.properties
+src/main/resources/application-local.properties
+*.env
+.env

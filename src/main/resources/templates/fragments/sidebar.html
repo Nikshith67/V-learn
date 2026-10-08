@@ -16,10 +16,15 @@
                th:classappend="${active} == 'student-videos' ? ' sidebar-link--active' : ''">
                 Videos
             </a>
+            <a th:href="@{/student/ai}"
+               class="sidebar-link"
+               th:classappend="${active} == 'student-ai' ? ' sidebar-link--active' : ''">
+                ✨ AI Assistant
+            </a>
             <a th:href="@{/student/profile}"
                class="sidebar-link"
                th:classappend="${active} == 'student-profile' ? ' sidebar-link--active' : ''">
-                Profile & Results
+                Profile &amp; Results
             </a>
         </th:block>
 
